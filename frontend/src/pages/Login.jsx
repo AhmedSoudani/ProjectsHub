@@ -1,48 +1,56 @@
-import {useNavigate} from "react-router-dom"
+import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom"
 import { Link } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 
 function Login() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const { login } = useAuth();
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
+    const [submitting, setSubmitting] = useState(false);
 
-    async function loginSubmission(){
-
-        
-
-        const username = document.getElementsByClassName("username").value;
-        const password = document.getElementsByClassName("password").value;
-
-        const response = await fetch("http://127.0.0.1:8000/token/", {
-            method: "POST",
-            headers: {
-                "Content-type": "application/json"
-            },
-            body: JSON.stringify({
-                username: username,
-                password: password
-            })
-        })
-
-        const data = await response.json();
-        localStorage.setItem("access", data.access);
-        localStorage.setItem("refresh", data.refersh);
-        navigate("/");
+    async function loginSubmission(event){
+        event.preventDefault();
+        setError("");
+        setSubmitting(true);
+        try {
+            await login(username, password);
+            navigate(location.state?.from || "/");
+        } catch (err) {
+            setError(err.status === 401 ? "Wrong username or password." : err.message);
+            setSubmitting(false);
+        }
     }
 
 
     return (
-        <>
-            <h1>login page</h1>
+        <div className="auth-card card">
+            <h1>Login</h1>
+            <p className="muted">Welcome back to ProjectsHub.</p>
 
-            <form method="post" onSubmit={loginSubmission()}>
-                <label>Username: <input type="text" className="username" placeholder="username" required/></label>
-                <label>password: <input type="text" className="password" placeholder="password" required/></label>
+            <form className="form" onSubmit={loginSubmission}>
+                <label>Username
+                    <input type="text" placeholder="username" autoComplete="username" required
+                        value={username} onChange={(e) => setUsername(e.target.value)} />
+                </label>
+                <label>Password
+                    <input type="password" placeholder="password" autoComplete="current-password" required
+                        value={password} onChange={(e) => setPassword(e.target.value)} />
+                </label>
 
-                <button type="submit">Login</button>
+                {error && <p className="alert">{error}</p>}
+
+                <button type="submit" className="btn btn-primary" disabled={submitting}>
+                    {submitting ? "Logging in…" : "Login"}
+                </button>
             </form>
 
-            <p>don't have an account? <Link to="/register">Register here</Link>
+            <p className="muted switch">Don't have an account? <Link to="/register">Register here</Link>
             </p>
-        </>
+        </div>
     )
 }
 

@@ -1,53 +1,64 @@
+import { useState } from "react";
 import {Link} from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 
 function Register(){
     const navigate = useNavigate();
+    const { register } = useAuth();
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+    const [confirmation, setConfirmation] = useState("");
+    const [error, setError] = useState("");
+    const [submitting, setSubmitting] = useState(false);
 
-    async function RegisterSubmission(){
-        const username = document.getElementsByClassName("username").value;
-        const password = document.getElementsByClassName("password").value;
-        const confirmation = document.getElementsByClassName("re-password").value;
+    async function RegisterSubmission(event){
+        event.preventDefault();
+        setError("");
 
-        if(password != confirmation){
-            document.getElementsByClassName("error").innerHTML = "the confirmation and the password must be identical";
+        if(password !== confirmation){
+            setError("The confirmation and the password must be identical.");
             return;
         }
 
-        const response = await fetch("http://127.0.0.1/register", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                username: username,
-                password: password,
-            })
-        })
-
-        const data = await response.json();
-        localStorage.setItem("access", data.access);
-        localStorage.setItem("refresh", data.refersh);
-        navigate("/");
-
+        setSubmitting(true);
+        try {
+            await register(username, password);
+            navigate("/");
+        } catch (err) {
+            setError(err.message);
+            setSubmitting(false);
+        }
     }
 
     return(
-        <>
+        <div className="auth-card card">
             <h1>Register</h1>
+            <p className="muted">Create an account to start managing projects.</p>
 
-            <form method="post" onSubmit={RegisterSubmission()}>
-                <label>Username: <input type="text" className="username" placeholder="username" required/></label>
-                <label>password: <input type="password" className="password" placeholder="password" required/></label>
-                <span className="error"></span>
-                <label>confirm password: <input type="password" className="re-password" placeholder="confirm password" required/></label>
+            <form className="form" onSubmit={RegisterSubmission}>
+                <label>Username
+                    <input type="text" placeholder="username" autoComplete="username" required
+                        value={username} onChange={(e) => setUsername(e.target.value)} />
+                </label>
+                <label>Password
+                    <input type="password" placeholder="password" autoComplete="new-password" required
+                        value={password} onChange={(e) => setPassword(e.target.value)} />
+                </label>
+                <label>Confirm password
+                    <input type="password" placeholder="confirm password" autoComplete="new-password" required
+                        value={confirmation} onChange={(e) => setConfirmation(e.target.value)} />
+                </label>
 
-                <button type="submit">Register</button>
+                {error && <p className="alert">{error}</p>}
 
-                <p>already have an account? <Link to="/login" >Click here</Link></p>
+                <button type="submit" className="btn btn-primary" disabled={submitting}>
+                    {submitting ? "Creating account…" : "Register"}
+                </button>
             </form>
-        
-        </>
+
+            <p className="muted switch">Already have an account? <Link to="/login" >Click here</Link></p>
+        </div>
     )
 }
 export default Register;
