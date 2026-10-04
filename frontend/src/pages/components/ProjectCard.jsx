@@ -1,4 +1,4 @@
-function ProjectCard({project}){
-    const date = new Date(project.deadline);
+function ProjectCard(){
+   
 }
 export default ProjectCard;
